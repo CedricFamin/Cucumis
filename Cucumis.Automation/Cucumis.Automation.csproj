@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>disable</Nullable>
+        <AssemblyName>Cucumis.Automation</AssemblyName>
+        <RootNamespace>Cucumis.Automation</RootNamespace>
+        <Configurations>Debug;Development;Release</Configurations>
+        <Platforms>AnyCPU</Platforms>
+        <OutputType>Library</OutputType>
+        <PackageId>Cucumis.Automation</PackageId>
+        <Authors>Cucumis.Automation</Authors>
+        <Company>Cucumis.Automation</Company>
+        <Product>Cucumis.Automation</Product>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Development' ">
+      <Optimize Condition=" '$(Optimize)' == '' ">true</Optimize>
+      <OutputPath>bin</OutputPath>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <OutputPath>bin</OutputPath>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <OutputPath>bin</OutputPath>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="FluentAssertions" Version="6.2.0" />
+      <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="6.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.1" />
+      <PackageReference Include="more.xunit.runner.visualstudio" Version="2.3.1">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+      <PackageReference Include="SpecFlow.xUnit" Version="3.9.40" />
+      <PackageReference Include="xunit.runner.utility" Version="2.8.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\Engine\Source\Programs\AutomationTool\Gauntlet\Gauntlet.Automation.csproj" />
+    </ItemGroup>
+
+</Project>
