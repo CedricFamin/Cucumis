@@ -7,11 +7,14 @@
 
 #include "AssetRegistry/AssetRegistryModule.h"
 
-#include "HttpServerRequest.h"
-#include "IHttpRouter.h"
+#include "Cucumis.h"
+#include "CucumisSettings.h"
+#include "GameMapsSettings.h"
 #include "HttpPath.h"
 #include "HttpServerModule.h"
-#include "Cucumis.h"
+#include "HttpServerRequest.h"
+#include "IHttpRouter.h"
+#include "ObjectTools.h"
 #include "Steps/CucumisStep_Blueprint.h"
 
 FCommonCucumisStepResponse::FCommonCucumisStepResponse()
@@ -19,7 +22,7 @@ FCommonCucumisStepResponse::FCommonCucumisStepResponse()
 	JsonObject = MakeShared<FJsonObject>();
 }
 
-TSharedPtr<FJsonObject> FCommonCucumisStepResponse::AddDataField(const FString& Name, const TObjectPtr<ACucumisStep>& Item)
+TSharedPtr<FJsonObject> FCommonCucumisStepResponse::AddDataField(const FString& Name, const UCucumisStep* Item)
 {
 	JsonObject->SetField(Name, MakeShared<FJsonValueObject>(Item->JsonVariables()));
 	return JsonObject;
@@ -79,7 +82,7 @@ void UGauntletTestControllerCucumis::OnTick(float TimeDelta)
 	Super::OnTick(TimeDelta);
 	if (!StepsToRun.IsEmpty())
 	{
-		const TObjectPtr<ACucumisStep> CurrentStep = StepsToRun[0];
+		const TObjectPtr<UCucumisStep> CurrentStep = StepsToRun[0];
 		if (CurrentStep->IsStepFinished())
 		{
 			FFinishedStep EndInfo;
@@ -87,11 +90,14 @@ void UGauntletTestControllerCucumis::OnTick(float TimeDelta)
 			EndInfo.ResponseVariables = CurrentStep->JsonVariables();
 			FinishedSteps.Emplace(EndInfo);
 			StepsToRun.RemoveAt(0);
-			GetWorld()->DestroyActor(CurrentStep);
 		}
 		else if (!CurrentStep->IsRunning())
 		{
 			CurrentStep->StartStep();
+		}
+		else
+		{
+			CurrentStep->Tick(GetWorld());
 		}
 	}
 }
@@ -104,25 +110,44 @@ void UGauntletTestControllerCucumis::OnStateChange(FName OldState, FName NewStat
 bool UGauntletTestControllerCucumis::RunSteps(const FHttpServerRequest& Request, const FHttpResultCallback& OnComplete)
 {
 	FString StepName = Request.PathParams.FindChecked(TEXT("stepname"));
-	TObjectPtr<ACucumisStep>* BaseStep = Steps.Find(StepName);
-	if (BaseStep != nullptr)
+	TObjectPtr<UCucumisStep>* BaseStep = Steps.Find(StepName);
+	if (BaseStep == nullptr)
 	{
-		FActorSpawnParameters SpawnParameters;
-		SpawnParameters.Template = *BaseStep;
-		ACucumisStep* NewStep = GetWorld()->SpawnActor<ACucumisStep>(BaseStep->GetClass(), FVector::Zero(), FRotator::ZeroRotator, SpawnParameters);
-
-		NewStep->SetNetworkID(NetworkGuidIndex++);
-		StepsToRun.Add(NewStep);
-		
-		NewStep->SetupStep(GetWorld(), Request, OnComplete);
-		UE_LOG(LogCucumis, Display, TEXT("Add step to the queue: %s, %s"), *NewStep->StepName, *NewStep->StaticClass()->GetPathName());
+		BaseStep = Steps.Find("StepNotRegistered");
 	}
+	UCucumisStep* NewStep = DuplicateObject<UCucumisStep>(*BaseStep, GetTransientPackage());
+
+	NewStep->SetNetworkID(NetworkGuidIndex++);
+	StepsToRun.Add(NewStep);
+	
+	NewStep->SetupStep(GetWorld(), Request, OnComplete);
+	UE_LOG(LogCucumis, Display, TEXT("Add step to the queue: %s, %s"), *NewStep->GetStepName(), *NewStep->StaticClass()->GetPathName());
 	
 	return true;
 }
 
 void UGauntletTestControllerCucumis::BindManagementRoute()
 {
+	HttpRouter->BindRoute(FHttpPath(TEXT("/Cucumis/Steps/Reset")), EHttpServerRequestVerbs::VERB_POST | EHttpServerRequestVerbs::VERB_GET
+		, FHttpRequestHandler::CreateLambda([this](const FHttpServerRequest& Request, const FHttpResultCallback& OnComplete) -> bool
+		{
+			if (!StepsToRun.IsEmpty())
+			{
+				return false;
+			}
+			
+			if (UGameInstance* GameInstance = GetWorld()->GetGameInstance())
+			{
+				GEngine->BrowseToDefaultMap(*GameInstance->GetWorldContext());
+				TUniquePtr<FCommonCucumisStepResponse> Response = MakeUnique<FCommonCucumisStepResponse>();
+			
+				Response->AddStringField("State", "Succeeded");
+				Response->SendResponse(OnComplete);
+				return true;
+			}
+			return false;
+		}));
+	
 	HttpRouter->BindRoute(FHttpPath(TEXT("/Cucumis/Steps/:stepname")), EHttpServerRequestVerbs::VERB_POST | EHttpServerRequestVerbs::VERB_GET
 		, FHttpRequestHandler::CreateLambda([this](const FHttpServerRequest& Request, const FHttpResultCallback& OnComplete) -> bool
 		{
@@ -155,9 +180,9 @@ void UGauntletTestControllerCucumis::BindManagementRoute()
 }
 
 
-void UGauntletTestControllerCucumis::RegisterNewStep(ACucumisStep* Step)
+void UGauntletTestControllerCucumis::RegisterNewStep(UCucumisStep* Step)
 {
-	Steps.Add(Step->StepName, Step);
+	Steps.Add(Step->GetStepName(), Step);
 }
 
 void UGauntletTestControllerCucumis::LoadCucumisSteps()
@@ -166,7 +191,7 @@ void UGauntletTestControllerCucumis::LoadCucumisSteps()
 	//LoadBlueprintCucumisSteps();
 }
 
-bool UGauntletTestControllerCucumis::IsCucumisPluginInitialized()
+bool UGauntletTestControllerCucumis::IsCucumisPluginInitialized(UCucumisStep_Simple* Step)
 {
 	if (Steps.IsEmpty())
 	{
@@ -176,7 +201,7 @@ bool UGauntletTestControllerCucumis::IsCucumisPluginInitialized()
 	return true;
 }
 
-bool UGauntletTestControllerCucumis::LoadBlueprintSteps()
+bool UGauntletTestControllerCucumis::LoadBlueprintSteps(UCucumisStep_Simple* Step)
 {
 	if (!bBlueprintLoaded)
 	{
@@ -187,7 +212,7 @@ bool UGauntletTestControllerCucumis::LoadBlueprintSteps()
 	return true;
 }
 
-bool UGauntletTestControllerCucumis::QuitTest()
+bool UGauntletTestControllerCucumis::QuitTest(UCucumisStep_Simple* Step)
 {
 	FTimerHandle UnusedHandle;
 	GetWorld()->GetTimerManager().SetTimer(
@@ -198,19 +223,30 @@ bool UGauntletTestControllerCucumis::QuitTest()
 	return true;
 }
 
+bool UGauntletTestControllerCucumis::StepNotRegistered(UCucumisStep_Simple* Step)
+{
+	Step->SetResponseError("Step not found");
+	return true;
+}
+
 void UGauntletTestControllerCucumis::LoadNativeSteps()
 {
-	RegisterNewStep(ACucumisStep_Simple::FromUFunction("IsCucumisPluginInitialized", this, "IsCucumisPluginInitialized"));
-	RegisterNewStep(ACucumisStep_Simple::FromUFunction("LoadBlueprintSteps", this, "LoadBlueprintSteps"));
-	RegisterNewStep(ACucumisStep_Simple::FromUFunction("QuitTest", this, "QuitTest"));
+	RegisterNewStep(UCucumisStep_Simple::FromUFunction("StepNotRegistered", this, "StepNotRegistered"));
+	RegisterNewStep(UCucumisStep_Simple::FromUFunction("IsCucumisPluginInitialized", this, "IsCucumisPluginInitialized"));
+	RegisterNewStep(UCucumisStep_Simple::FromUFunction("LoadBlueprintSteps", this, "LoadBlueprintSteps"));
+	RegisterNewStep(UCucumisStep_Simple::FromUFunction("QuitTest", this, "QuitTest"));
 }
 
 void UGauntletTestControllerCucumis::LoadBlueprintCucumisSteps()
 {
+	const UCucumisSettings* Settings = GetDefault<UCucumisSettings>();
 	const FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
 	TArray<FAssetData> AssetsData;
 	FARFilter Filter;
-	Filter.PackagePaths.Emplace(TEXT("/Game/Cucumis/"));
+	for (const FDirectoryPath& StepsDirectory : Settings->StepsDirectories)
+	{
+		Filter.PackagePaths.Emplace(StepsDirectory.Path);
+	}
 	Filter.ClassPaths.Emplace(UBlueprint::StaticClass()->GetClassPathName());
 	Filter.bRecursiveClasses = true;
 	AssetRegistryModule.Get().GetAssets(Filter, AssetsData);
@@ -224,12 +260,12 @@ void UGauntletTestControllerCucumis::LoadBlueprintCucumisSteps()
 			continue;
 		}
 
-		if (!BlueprintAsset->GeneratedClass->IsChildOf(ACucumisStep_Blueprint::StaticClass()))
+		if (!BlueprintAsset->GeneratedClass->IsChildOf(UCucumisStep_Blueprint::StaticClass()))
 		{
 			continue;
 		}
 
-		ACucumisStep* Step = NewObject<ACucumisStep>(GetTransientPackage(), BlueprintAsset->GeneratedClass);
+		UCucumisStep* Step = NewObject<UCucumisStep>(GetTransientPackage(), BlueprintAsset->GeneratedClass);
 		if (!Step)
 		{
 			continue;

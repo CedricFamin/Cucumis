@@ -7,6 +7,35 @@ namespace Cucumis.Automation.StepDefinitions
     {
         private readonly UnrealInstancesDriver _unrealInstances;
 
+        [BeforeScenario]
+        public void CreateUnrealIntances(ScenarioContext scenarioContext)
+        {
+	        int nbInstanceToCreate = 9;
+	        while (nbInstanceToCreate > 1)
+	        {
+		        if (scenarioContext.ScenarioInfo.Tags.Contains($"{nbInstanceToCreate}_Players"))
+		        {
+			        break;
+		        }
+		        --nbInstanceToCreate;
+	        }
+
+	        while (nbInstanceToCreate > 0)
+	        {
+		        UnrealInstanceDriver unrealInstance = _unrealInstances.CreateNewInstance();
+		        unrealInstance.StartProcess();
+		        unrealInstance.WaitIsReady();
+		        unrealInstance.SendSimpleCommand("LoadBlueprintSteps");
+		        --nbInstanceToCreate;
+	        }
+        }
+        
+        [AfterScenario]
+        public void ResetUnrealIntances()
+        {
+	        _unrealInstances.Reset();
+        }
+        
         UnrealEngineCoreStepDefinitions(UnrealInstancesDriver driver)
         {
             _unrealInstances = driver;

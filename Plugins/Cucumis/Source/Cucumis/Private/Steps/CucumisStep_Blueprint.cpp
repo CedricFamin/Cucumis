@@ -3,7 +3,7 @@
 
 #include "Steps/CucumisStep_Blueprint.h"
 
-bool ACucumisStep_Blueprint::RunProceedToNextStep()
+bool UCucumisStep_Blueprint::RunProceedToNextStep()
 {
 	if (bNextStep)
 	{
@@ -14,7 +14,7 @@ bool ACucumisStep_Blueprint::RunProceedToNextStep()
 	return false;
 }
 
-bool ACucumisStep_Blueprint::StartCurrentStep()
+bool UCucumisStep_Blueprint::StartCurrentStep()
 {
 	if (!bRunningStep)
 	{
@@ -25,11 +25,8 @@ bool ACucumisStep_Blueprint::StartCurrentStep()
 	return false;
 }
 
-bool ACucumisStep_Blueprint::StepStart()
+bool UCucumisStep_Blueprint::StepStart()
 {
-	if (!HasActorBegunPlay())
-		return false;
-	
 	if (StartCurrentStep())
 	{
 		EventStepStart();
@@ -37,7 +34,7 @@ bool ACucumisStep_Blueprint::StepStart()
 	return RunProceedToNextStep();
 }
 
-bool ACucumisStep_Blueprint::StepRun()
+bool UCucumisStep_Blueprint::StepRun()
 {
 	if (StartCurrentStep())
 	{
@@ -46,7 +43,7 @@ bool ACucumisStep_Blueprint::StepRun()
 	return RunProceedToNextStep();
 }
 
-bool ACucumisStep_Blueprint::StepEnd()
+bool UCucumisStep_Blueprint::StepEnd()
 {
 	if (StartCurrentStep())
 	{
@@ -55,27 +52,27 @@ bool ACucumisStep_Blueprint::StepEnd()
 	return RunProceedToNextStep();
 }
 
-void ACucumisStep_Blueprint::EventStepRun_Implementation()
+void UCucumisStep_Blueprint::EventStepRun_Implementation()
 {
 	ProceedToNextStep();
 }
 
-void ACucumisStep_Blueprint::EventStepEnd_Implementation()
+void UCucumisStep_Blueprint::EventStepEnd_Implementation()
 {
 	ProceedToNextStep();
 }
 
-void ACucumisStep_Blueprint::EventStepStart_Implementation()
+void UCucumisStep_Blueprint::EventStepStart_Implementation()
 {
 	ProceedToNextStep();
 }
 
-void ACucumisStep_Blueprint::ProceedToNextStep()
+void UCucumisStep_Blueprint::ProceedToNextStep()
 {
 	bNextStep = true;
 }
 
-void ACucumisStep_Blueprint::Retry()
+void UCucumisStep_Blueprint::Retry()
 {
 	bRunningStep = true;
 }

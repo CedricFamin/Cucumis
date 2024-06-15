@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Collections.Immutable;
+using System.Text.RegularExpressions;
 
 namespace Cucumis.Automation.Drivers;
 
@@ -59,6 +60,15 @@ public class UnrealInstancesDriver
         };
         _instances.Add(instance);
         return instance;
+    }
+    
+    public void Reset()
+    {
+	    foreach (var instance in _instances)
+	    {
+		    instance.Reset();
+	    }
+	    _instances.Clear();
     }
 
     public UnrealInstancesAccessor Server()

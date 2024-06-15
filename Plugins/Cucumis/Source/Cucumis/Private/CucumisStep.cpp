@@ -1,16 +1,10 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
-#include "CucumisStep.h"
+#include "..\Public\CucumisStep.h"
 #include "HttpServerRequest.h"
 #include "ControlFlow.h"
 
-ACucumisStep::ACucumisStep()
-{
-	PrimaryActorTick.bCanEverTick = true;
-	PrimaryActorTick.TickInterval = 1.0f;
-}
-
-bool ACucumisStep::ParsePostParams(const FHttpServerRequest& Request)
+bool UCucumisStep::ParsePostParams(const FHttpServerRequest& Request)
 {
 	const FString BodyAsString = FString(Request.Body.Num(), reinterpret_cast<const char*>(Request.Body.GetData()));
 	if (BodyAsString.IsEmpty())
@@ -28,37 +22,25 @@ bool ACucumisStep::ParsePostParams(const FHttpServerRequest& Request)
 	return false;
 }
 
-void ACucumisStep::Flow_SetupStep(UWorld* InWorld, const FHttpServerRequest& Request, const FHttpResultCallback& OnComplete)
+void UCucumisStep::SetResponseError(const FString& Error)
 {
-	World = InWorld;
-	PostParamsRaw = MakeShared<FJsonObject>();
-	JsonReponseRaw = MakeShared<FJsonObject>();
-	Response.OnCompleteCallback = OnComplete;
-
-	if (!ParsePostParams(Request))
-	{
-		SetResponseError("Can't parse body.");
-	}
+	JsonResponseRaw->SetStringField("Error", Error);
+	bHasError = true;
 }
 
-void ACucumisStep::Flow_SendResponse()
+UCucumisStep::UCucumisStep()
 {
-	Response.AddStringField("State", bHasError ? "Failed" : "Succeeded");
-	Response.AddDataField("Data", this);
-	Response.SendResponse();
-	bResponseSent = true;
 }
 
-void ACucumisStep::SetupStep(UWorld* InWorld, const FHttpServerRequest& Request, const FHttpResultCallback& OnComplete)
+void UCucumisStep::SetupStep(UWorld* InWorld, const FHttpServerRequest& Request, const FHttpResultCallback& OnComplete)
 {
-	SetActorTickEnabled(true);
 	StepFlow = MakeShared<FControlFlow>();
 	StepFlow->QueueFunction(TEXT("Setup Step")).BindLambda([&]{ Flow_SetupStep(InWorld, Request, OnComplete);});
 	StepFlow->QueueWait("Wait until step start").BindLambda([&](FControlFlowNodeRef FlowHandle)
 	{
 		RunCurrentStep.BindLambda([this, FlowHandle]
 		{
-			if (IsRunning() || bHasError)
+			if (IsRunning() || HasError())
 			{
 				FlowHandle->ContinueFlow();
 			}
@@ -69,7 +51,7 @@ void ACucumisStep::SetupStep(UWorld* InWorld, const FHttpServerRequest& Request,
 		
 		RunCurrentStep.BindLambda([this, FlowHandle]
 		{
-			if (bHasError || StepStart())
+			if (HasError() || StepStart())
 			{
 				FlowHandle->ContinueFlow();
 			}
@@ -79,7 +61,7 @@ void ACucumisStep::SetupStep(UWorld* InWorld, const FHttpServerRequest& Request,
 	{
 		RunCurrentStep.BindLambda([this, FlowHandle]
 		{
-			if (bHasError || StepRun())
+			if (HasError() || StepRun())
 			{
 				FlowHandle->ContinueFlow();
 			}
@@ -89,26 +71,45 @@ void ACucumisStep::SetupStep(UWorld* InWorld, const FHttpServerRequest& Request,
 	{
 		RunCurrentStep.BindLambda([this, FlowHandle]
 		{
-			if (bHasError || StepEnd())
+			if (HasError() || StepEnd())
 			{
 				FlowHandle->ContinueFlow();
 			}
 		});
 	});
 	StepFlow->QueueFunction(TEXT("DeInit")).BindLambda([this]{ RunCurrentStep.Unbind(); });
-	StepFlow->QueueStep(TEXT("Send response"), this, &ACucumisStep::Flow_SendResponse);
+	StepFlow->QueueStep(TEXT("Send response"), this, &UCucumisStep::Flow_SendResponse);
 	StepFlow->ExecuteFlow();
 }
 
-void ACucumisStep::Tick(float DeltaSeconds)
+
+void UCucumisStep::Flow_SetupStep(UWorld* InWorld, const FHttpServerRequest& Request, const FHttpResultCallback& OnComplete)
 {
-	Super::Tick(DeltaSeconds);
+	PostParamsRaw = MakeShared<FJsonObject>();
+	JsonResponseRaw = MakeShared<FJsonObject>();
+	Response.OnCompleteCallback = OnComplete;
+
+	if (!ParsePostParams(Request))
+	{
+		SetResponseError("Can't parse body.");
+	}
+}
+
+void UCucumisStep::Flow_SendResponse()
+{
+	Response.AddStringField("State", HasError() ? "Failed" : "Succeeded");
+	Response.AddDataField("Data", this);
+	Response.SendResponse();
+	bResponseSent = true;
+}
+
+
+
+void UCucumisStep::Tick(UWorld* InWorld)
+{
+	World = InWorld;
 	if (RunCurrentStep.IsBound())
 		RunCurrentStep.Execute();
 }
 
-void ACucumisStep::SetResponseError(const FString& Error)
-{
-	JsonReponseRaw->SetStringField("Error", Error);
-	bHasError = true;
-}
+

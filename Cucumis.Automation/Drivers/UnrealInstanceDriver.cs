@@ -69,4 +69,9 @@ public class UnrealInstanceDriver : IUnrealInstanceDriverInterface
         UnrealApiResponse resultJson = SendCommand(command);
         resultJson.State.Should().Be("Succeeded", $"Command {command} failed, Reason: {resultJson.Data.GetValueOrDefault("Error")}.");
     }
+
+    public void Reset()
+    {
+	    SendSimpleCommand("Reset");
+    }
 }

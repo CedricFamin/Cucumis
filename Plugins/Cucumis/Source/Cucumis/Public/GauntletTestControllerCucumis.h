@@ -9,9 +9,11 @@
 
 #include "GauntletTestControllerCucumis.generated.h"
 
+class ICucumisStepInterface;
+class ACucumisStep_Simple;
 struct FHttpServerResponse;
 class IHttpRouter;
-class ACucumisStep;
+class UCucumisStep;
 
 USTRUCT()
 struct FFinishedStep
@@ -67,7 +69,7 @@ struct FCommonCucumisStepResponse
 		return JsonObject;
 	}
 
-	TSharedPtr<FJsonObject> AddDataField(const FString& Name, const TObjectPtr<ACucumisStep>& Item);
+	TSharedPtr<FJsonObject> AddDataField(const FString& Name, const UCucumisStep* Item);
 	void SendResponse(const FHttpResultCallback& OnComplete);
 
 	void SendResponse() const;
@@ -93,17 +95,19 @@ public:
 
 private:
 	void BindManagementRoute();
-	void RegisterNewStep(ACucumisStep* Step);
+	void RegisterNewStep(UCucumisStep* Step);
 	void LoadNativeSteps();
 	void LoadCucumisSteps();
 	void LoadBlueprintCucumisSteps();
 	
 	UFUNCTION()
-	bool IsCucumisPluginInitialized();
+	bool IsCucumisPluginInitialized(UCucumisStep_Simple* Step);
 	UFUNCTION()
-	bool LoadBlueprintSteps();
+	bool LoadBlueprintSteps(UCucumisStep_Simple* Step);
 	UFUNCTION()
-	bool QuitTest();
+	bool QuitTest(UCucumisStep_Simple* Step);
+	UFUNCTION()
+	bool StepNotRegistered(UCucumisStep_Simple* Step);
 
 private:
 	uint64 NetworkGuidIndex = 0;
@@ -114,10 +118,10 @@ private:
 	TArray<FFinishedStep> FinishedSteps;
 	
 	UPROPERTY()
-	TMap<FString, TObjectPtr<ACucumisStep>> Steps;
+	TMap<FString, TObjectPtr<UCucumisStep>> Steps;
 
 	UPROPERTY()
-	TArray<TObjectPtr<ACucumisStep>> StepsToRun;
+	TArray<TObjectPtr<UCucumisStep>> StepsToRun;
 
 	UPROPERTY()
 	bool bBlueprintLoaded = false;

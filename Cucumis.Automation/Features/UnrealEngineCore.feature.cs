@@ -109,16 +109,13 @@ namespace Cucumis.Automation.Features
             {
                 this.ScenarioStart();
 #line 4
-  testRunner.Given("start an unreal editor instance", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
-#line hidden
-#line 5
   testRunner.And("wait until main menu is shown", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 6
+#line 5
   testRunner.When("Load Start Game", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
-#line 7
-  testRunner.Given("wait 60 seconds", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
+#line 6
+  testRunner.Given("wait 10 seconds", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
 #line hidden
             }
             this.ScenarioCleanup();
@@ -136,7 +133,7 @@ namespace Cucumis.Automation.Features
                     "2_Players"};
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Load Multiple Game", null, tagsOfScenario, argumentsOfScenario, this._featureTags);
-#line 10
+#line 9
  this.ScenarioInitialize(scenarioInfo);
 #line hidden
             bool isScenarioIgnored = default(bool);
@@ -156,25 +153,19 @@ namespace Cucumis.Automation.Features
             else
             {
                 this.ScenarioStart();
-#line 11
-  testRunner.Given("start an unreal editor instance", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
-#line hidden
-#line 12
-  testRunner.And("start an unreal editor instance", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
-#line hidden
-#line 13
+#line 10
   testRunner.And("wait until main menu is shown", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "And ");
 #line hidden
-#line 14
+#line 11
   testRunner.When("instance 0 Load Start Game", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
-#line 15
+#line 12
   testRunner.Given("wait 10 seconds", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
 #line hidden
-#line 16
+#line 13
   testRunner.When("instance 1 Load Start Game", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "When ");
 #line hidden
-#line 17
+#line 14
   testRunner.Given("wait 10 seconds", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
 #line hidden
             }
@@ -192,7 +183,7 @@ namespace Cucumis.Automation.Features
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             argumentsOfScenario.Add("map", map);
             TechTalk.SpecFlow.ScenarioInfo scenarioInfo = new TechTalk.SpecFlow.ScenarioInfo("Load all maps", null, tagsOfScenario, argumentsOfScenario, this._featureTags);
-#line 20
+#line 17
  this.ScenarioInitialize(scenarioInfo);
 #line hidden
             bool isScenarioIgnored = default(bool);
@@ -212,19 +203,16 @@ namespace Cucumis.Automation.Features
             else
             {
                 this.ScenarioStart();
-#line 21
-  testRunner.Given("start an unreal editor instance", ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Given ");
-#line hidden
-#line 22
+#line 18
   testRunner.Then(string.Format("travel to {0}", map), ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
-#line 23
+#line 19
   testRunner.Then(string.Format("server travel to {0}", map), ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
-#line 24
+#line 20
   testRunner.Then(string.Format("instance 0 travel to {0}", map), ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
-#line 25
+#line 21
   testRunner.Then(string.Format("all travel to {0}", map), ((string)(null)), ((TechTalk.SpecFlow.Table)(null)), "Then ");
 #line hidden
             }

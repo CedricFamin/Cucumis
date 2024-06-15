@@ -11,7 +11,7 @@
  * 
  */
 UCLASS(Blueprintable)
-class CUCUMIS_API ACucumisStep_Blueprint : public ACucumisStep
+class CUCUMIS_API UCucumisStep_Blueprint : public UCucumisStep
 {
 	GENERATED_BODY()
 
